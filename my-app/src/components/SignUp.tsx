@@ -14,8 +14,10 @@ import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
 import { GoogleIcon, FacebookIcon } from "./CustomIcons";
 import { useContext } from "react";
-import { useAuth } from "./AuthProvider";
 import Card from "@mui/material/Card";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "../firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
 export default function SignUp({ handleClose }: { handleClose: () => void }) {
   const [emailError, setEmailError] = React.useState(false);
@@ -25,7 +27,7 @@ export default function SignUp({ handleClose }: { handleClose: () => void }) {
   const [nameError, setNameError] = React.useState(false);
   const [nameErrorMessage, setNameErrorMessage] = React.useState("");
 
-  const context = useAuth();
+  const navigate = useNavigate();
 
   const validateInputs = () => {
     const email = document.getElementById("email") as HTMLInputElement;
@@ -69,14 +71,28 @@ export default function SignUp({ handleClose }: { handleClose: () => void }) {
       event.preventDefault();
       return;
     }
+
+    event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const username = data.get("username");
+    const username = data.get("username") as string;
     const email = data.get("email") as string;
     const password = data.get("password") as string;
-    console.log("submit clicked");
 
-    context.signIn(email, password);
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in
+        const user = userCredential.user;
+        updateProfile(user, {
+          displayName: username,
+        });
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+      });
 
+    navigate("/");
     handleClose();
   };
 

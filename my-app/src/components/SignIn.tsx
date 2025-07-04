@@ -11,17 +11,22 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import ForgotPassword from "./ForgotPassword";
 import { GoogleIcon, FacebookIcon } from "./CustomIcons";
-import { getAuth } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { Card } from "../styles/CardStyles";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../firebaseConfig";
 
-export default function SignIn(props: { disableCustomTheme?: boolean }) {
+export default function SignIn({
+  handleCloseDialog,
+}: {
+  handleCloseDialog: () => void;
+}) {
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
   const [open, setOpen] = React.useState(false);
-
-  const auth = getAuth();
+  const navigate = useNavigate();
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -36,11 +41,20 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
       event.preventDefault();
       return;
     }
+
+    event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
+
+    const email = data.get("email") as string;
+    const password = data.get("password") as string;
+    signInWithEmailAndPassword(auth, email, password).catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log(errorCode, errorMessage);
     });
+
+    handleCloseDialog();
+    navigate("/");
   };
 
   const validateInputs = () => {
@@ -71,10 +85,6 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
   };
 
   return (
-    // <AppTheme {...props}>
-    //  <CssBaseline enableColorScheme />
-    // <SignInContainer direction="column" justifyContent="space-between">
-    //  <ColorModeSelect sx={{ position: "fixed", top: "1rem", right: "1rem" }} />
     <Card variant="outlined">
       <Typography
         component="h1"
@@ -181,7 +191,5 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
         </Typography>
       </Box>
     </Card>
-    // </SignInContainer>
-    // </AppTheme>
   );
 }
